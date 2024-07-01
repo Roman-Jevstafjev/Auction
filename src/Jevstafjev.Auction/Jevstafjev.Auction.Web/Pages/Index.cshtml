@@ -1,0 +1,30 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+@if (Model.Lots.Any())
+{
+    foreach (var item in Model.Lots)
+    {
+        <div class="card m-2">
+            <div class="card-header">
+                @item.Category.Name
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">@item.Name</h5>
+                <h6 class="card-subtitle mb-2 text-danger">Current bid: @item.CurrentBid$</h6>
+                <p class="card-text">@item.Description</p>
+                <a asp-page="lot" asp-route-id="@item.Id" class="btn btn-outline-primary">Place a bid</a>
+            </div>
+            <div class="card-footer">
+                Expiration date: @item.ExpirationDate
+            </div>
+        </div>
+    }
+}
+else
+{
+    <p>No lots available</p>
+}

@@ -1,0 +1,36 @@
+﻿@page
+@model CreateModel
+@{
+    ViewData["Title"] = "Create a lot";
+}
+
+<div class="col-lg-6">
+    <form method="post">
+        <h2>Create a lot</h2>
+        <div asp-validation-summary="All"></div>
+        <div class="form-group">
+            <label asp-for="Input.Name"></label>
+            <input asp-for="Input.Name" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label asp-for="Input.Description"></label>
+            <textarea asp-for="Input.Description" class="form-control"></textarea>
+        </div>
+        <div class="form-group">
+            <label asp-for="Input.CategoryId"></label>
+            <select asp-for="Input.CategoryId"
+                    asp-items="new SelectList(Model.Categories, nameof(CategoryViewModel.Id), nameof(CategoryViewModel.Name))"
+                    class="form-control">
+            </select>
+        </div>
+        <div class="form-group">
+            <label asp-for="Input.StartingBid"></label>
+            <input asp-for="Input.StartingBid" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label asp-for="Input.ExpirationDate"></label>
+            <input asp-for="Input.ExpirationDate" class="form-control" />
+        </div>
+        <input type="submit" class="btn btn-primary mt-2" value="Submit" />
+    </form>
+</div>

@@ -1,0 +1,11 @@
+﻿@page "/lot/{id}"
+@model Jevstafjev.Auction.Web.Pages.LotModel
+@{
+    ViewData["Title"] = Model.Lot.Name;
+}
+
+<component type="typeof(LotComponent)" render-mode="ServerPrerendered" param-lotId="@Model.Lot.Id" />
+
+@section Scripts {
+    <script src="_framework/blazor.server.js"></script>
+}

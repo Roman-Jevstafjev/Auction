@@ -1,0 +1,158 @@
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.SignalR.Client
+@inject IBidService BidService
+@inject NavigationManager Navigation
+
+<div class="row">
+    <div class="col-lg-6">
+        @if (_lot != null)
+        {
+            <div class="card h-100">
+                <div class="card-header">
+                    @_lot.Category.Name
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">@_lot.Name</h5>
+                    <h6 class="card-subtitle mb-2 text-danger">Current bid: @_lot.CurrentBid$</h6>
+                    <p class="card-text">@_lot.Description</p>
+                </div>
+                <div class="card-footer">
+                    Expiration date: @_lot.ExpirationDate
+                </div>
+            </div>
+        }
+        else
+        {
+            <p>Loading...</p>
+        }
+    </div>
+    
+    <div class="col-lg-6">
+        <h2>Place a bid</h2>
+
+        @if (_result is { IsSuccess: true })
+        {
+            <div class="alert alert-success" role="alert">
+                @_result.Message
+            </div>
+        }
+
+        @if (_result is { IsSuccess: false })
+        {
+            <div class="alert alert-danger" role="alert">
+                @_result.Message
+            </div>
+        }
+
+        @if (_errors.Any())
+        {
+            <div>
+                <ul>
+                    @foreach (var error in _errors)
+                    {
+                        <li class="text-danger">@error</li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <div class="form-group">
+            <label>Sum</label>
+            <input @bind-value="_sum" type="number" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label>Name</label>
+            <input @bind-value="_name" type="text" class="form-control" />
+        </div>
+        <button @onclick="CreateBid" class="btn btn-outline-primary mt-2">Submit</button>
+    </div>
+</div>
+
+<div class="mt-2">
+    <div class="mt-2">
+        <h2>All bids(@(_lot?.Bids.Count ?? 0))</h2>
+        @if (_lot != null && _lot.Bids.Any())
+        {
+            @foreach (var item in _lot.Bids.OrderByDescending(x => x.CreatedAt))
+            {
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <h5 class="card-title">@item.Sum$</h5>
+                        <p class="card-text">By @item.Name.</p>
+                    </div>
+                    <div class="card-footer">
+                        <small class="text-muted">@item.CreatedAt</small>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <p class="text-muted">No bids</p>
+        }
+    </div>
+</div>
+
+@code {
+    private HubConnection _connection = null!;
+    private LotViewModel? _lot;
+    private decimal _sum;
+    private string _name = string.Empty;
+    private List<string> _errors = new();
+    private BidCreationResult? _result;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _connection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri($"/communication?lotId={LotId}"))
+            .Build();
+
+        _connection.On<LotViewModel>("UpdateLotAsync", lot =>
+        {
+            _lot = lot;
+            InvokeAsync(StateHasChanged);
+        });
+
+        await _connection.StartAsync();
+    }
+
+    private async Task CreateBid()
+    {
+        _errors = Validate().Select(x => x.ErrorMessage).ToList()!;
+        if (_errors.Any())
+        {
+            return;
+        }
+
+        var cancellationTokenSource = new CancellationTokenSource();
+        cancellationTokenSource.CancelAfter(5000);
+
+        _result = await BidService.CreateAsync(
+            LotId,
+            _sum,
+            _name,
+            cancellationTokenSource.Token);
+        if (_result.IsSuccess)
+        {
+            _sum = 0;
+            _name = string.Empty;
+
+            await _connection.SendAsync("UpdateLotAsync", LotId);
+        }
+        
+        _errors.Clear();
+    }
+
+    private IEnumerable<ValidationResult> Validate()
+    {
+        if (_sum <= 0)
+            yield return new ValidationResult("The bid amount cannot be less than or equal to zero.");
+
+        if (string.IsNullOrEmpty(_name))
+            yield return new ValidationResult("Name required.");
+    }
+
+    [Parameter]
+    [EditorRequired]
+    public Guid LotId { get; set; }
+}
