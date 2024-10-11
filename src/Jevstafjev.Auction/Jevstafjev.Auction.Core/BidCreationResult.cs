@@ -1,10 +1,5 @@
 ﻿namespace Jevstafjev.Auction.Core;
 
-public interface IBidService
-{
-    Task<BidCreationResult> CreateAsync(Guid lotId, decimal sum, string name, CancellationToken cancellationToken);
-}
-
 public class BidCreationResult
 {
     public BidCreationResult(bool isSuccess, string message)
@@ -19,7 +14,8 @@ public class BidCreationResult
     public static BidCreationResult Error(string message)
         => new BidCreationResult(false, message);
 
+    public string Message { get; }
+
     public bool IsSuccess { get; }
 
-    public string Message { get; }
 }

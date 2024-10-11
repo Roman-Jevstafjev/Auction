@@ -8,6 +8,6 @@ public class DependencyContainerDefinition : AppDefinition
 {
     public override void ConfigureServices(WebApplicationBuilder builder)
     {
-        builder.Services.AddTransient<IBidService, BidService>();
+        builder.Services.AddTransient<ILotService, LotService>();
     }
 }

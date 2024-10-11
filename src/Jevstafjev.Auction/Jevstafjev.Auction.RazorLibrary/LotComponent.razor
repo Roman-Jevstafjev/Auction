@@ -1,7 +1,5 @@
-@using System.ComponentModel.DataAnnotations
-@using Microsoft.AspNetCore.SignalR.Client
-@inject IBidService BidService
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
 <div class="row">
     <div class="col-lg-6">
@@ -30,17 +28,17 @@
     <div class="col-lg-6">
         <h2>Place a bid</h2>
 
-        @if (_result is { IsSuccess: true })
+        @if (_creationResult is { IsSuccess: true })
         {
             <div class="alert alert-success" role="alert">
-                @_result.Message
+                @_creationResult.Message
             </div>
         }
 
-        @if (_result is { IsSuccess: false })
+        @if (_creationResult is { IsSuccess: false })
         {
             <div class="alert alert-danger" role="alert">
-                @_result.Message
+                @_creationResult.Message
             </div>
         }
 
@@ -95,16 +93,18 @@
 
 @code {
     private HubConnection _connection = null!;
+
     private LotViewModel? _lot;
+
     private decimal _sum;
     private string _name = string.Empty;
     private List<string> _errors = new();
-    private BidCreationResult? _result;
+    private BidCreationResult? _creationResult;
 
     protected override async Task OnInitializedAsync()
     {
         _connection = new HubConnectionBuilder()
-            .WithUrl(Navigation.ToAbsoluteUri($"/communication?lotId={LotId}"))
+            .WithUrl(Navigation.ToAbsoluteUri($"/communication"))
             .Build();
 
         _connection.On<LotViewModel>("UpdateLotAsync", lot =>
@@ -113,7 +113,13 @@
             InvokeAsync(StateHasChanged);
         });
 
+        _connection.On<string>("SendErrorMessageAsync", async message =>
+        {
+            await JSRuntime.InvokeVoidAsync("alert", message);
+        });
+
         await _connection.StartAsync();
+        await _connection.SendAsync("JoinLotAsync", LotId);
     }
 
     private async Task CreateBid()
@@ -124,20 +130,11 @@
             return;
         }
 
-        var cancellationTokenSource = new CancellationTokenSource();
-        cancellationTokenSource.CancelAfter(5000);
-
-        _result = await BidService.CreateAsync(
-            LotId,
-            _sum,
-            _name,
-            cancellationTokenSource.Token);
-        if (_result.IsSuccess)
+        _creationResult = await _connection.InvokeAsync<BidCreationResult>("CreateBidAsync", _lot!.Id, _sum, _name);
+        if (_creationResult.IsSuccess)
         {
             _sum = 0;
             _name = string.Empty;
-
-            await _connection.SendAsync("UpdateLotAsync", LotId);
         }
         
         _errors.Clear();

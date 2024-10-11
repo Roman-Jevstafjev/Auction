@@ -5,4 +5,6 @@ namespace Jevstafjev.Auction.Web.Hubs;
 public interface ICommunicationHub
 {
     Task UpdateLotAsync(LotViewModel lot);
+
+    Task SendErrorMessageAsync(string message);
 }

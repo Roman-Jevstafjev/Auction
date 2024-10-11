@@ -4,10 +4,10 @@ using Jevstafjev.Auction.Entities;
 
 namespace Jevstafjev.Auction.Web.Infrastructure;
 
-public class BidService(IUnitOfWork unitOfWork)
-    : IBidService
+public class LotService(IUnitOfWork unitOfWork)
+    : ILotService
 {
-    public async Task<BidCreationResult> CreateAsync(Guid lotId, decimal sum, string name, CancellationToken cancellationToken)
+    public async Task<BidCreationResult> CreateBidAsync(Guid lotId, decimal sum, string name, CancellationToken cancellationToken)
     {
         var lotRepository = unitOfWork.GetRepository<Lot>();
         var lot = await lotRepository.FindAsync(lotId, cancellationToken);
